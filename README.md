@@ -11,6 +11,8 @@ the basic logic of this PHP script:
    -  `<element class="p-summary">` as `<summary>`
    -  `<element class="e-content">` (or `<element class="entry"` for older markup) as `<content>`
    -  `/path/to/blog/entry` as `<id>`/`<link>`
-3. outputs all of the above to `articles.xml` in another directory. 
+3. outputs all of the above to `articles.xml` in another directory.
 
-feel free to modify for your needs!
+for reference, you can check out [the resulting file](https://jasm1nii.xyz/blog/articles/articles.xml) that i've generated myself.
+
+feel free to modify according to your needs!
