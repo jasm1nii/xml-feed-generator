@@ -1,25 +1,38 @@
 # xml-feed-generator
-an RSS/atom feed generator for my personal site :cat:
-
----
-
-## disclaimer
-**this script is not meant to be used as is (yet).**
-
-expect to do *a lot* of modification to fit your needs, as this was originally tailored for my site structure and blog markup.
+an RSS/atom feed generator for my personal site :cat: tested to work with PHP version 8.2.
 
 ---
 
 ## how it works
 1. match files in a specificied directory.
 2. load the DOM of each file.
-3. parse values retrieved from the following strings/HTML elements (prioritizing [h-entry markup](https://microformats.org/wiki/h-entry)), as children of a feed `<entry>`:
-   -  `<element class=p-name>` (or `<h2>`) as `<title>`
-   -  the `datetime` attribute of `<time>` (or the file creation date) as `<updated>`
-   -  `<element class="p-summary">` as `<summary>`
-   -  `<element class="e-content">` (or `<article>`) as `<content>`
-   -  `/path/to/blog/entry` as `<id>` and `<link>`
-4. output all of the above into a new file named **articles.xml**.
+3. parse the following elements as children of `<entry>`, in order of priority:
+
+| original HTML                 | feed output                     |
+|-------------------------------|---------------------------------|
+| 1. `class="p-name"`           | `<title>`                       |
+| 2. `<title>` in `<head>`      |                                 |
+| 3. the XML feed title         |                                 |
+|                               |                                 |
+| 1. `datetime` attribute of `class=dt-updated` | `<updated>`     |
+| 2. `datetime` attribute of the first `<time>` element |         |
+| 3. file modification date, retrieved from the server |          |
+|                               |                                 |
+| 1. `datetime` attribute of `class=dt-published` | `<published>` |
+| 2. `datetime` attribute of the first `<time>` element |         |
+| 3. file creation date, retrieved from the server |              |
+|                               |                                 |
+| 1. `class="p-summary"`        | `<summary>`                     |
+| 2. `<meta property="description">` |                            |
+|                               |                                 |
+| 1. `class="e-content"`        | `<content>`                     |
+| 2. `<article>`                |                                 |
+|                               |                                 |
+| 1. /path/to/blog/entry        | `<id>` and `<link rel="alternate">` |
+
+
+
+4. output all of the above into a new file named **articles.xml** (default name, but can be changed).
 
 ## ways to use
 - configure a cron job on your web server to run automatically every now and then.

@@ -6,13 +6,16 @@
     // the timezone referenced by the system for automatic timestamping.
     // suported timezones: https://www.php.net/manual/en/timezones.php
     $timezone = 'Asia/Jakarta';
+    $max_entries = 10;
 
-    // FEED METADATA //////////////////////////////////////////////////////////////////////
+    // FEED METADATA //
     // certain characters must be escaped as HTML entities - note that XML only accepts five of them.
-    // reference: https://en.wikipedia.org/wiki/List_of_XML_and_HTML_character_entity_references
+    // reference for character entities: https://en.wikipedia.org/wiki/List_of_XML_and_HTML_character_entity_references
     $feed_title = 'jasmine&apos;s b(rain)log | jasm1nii.xyz';
     $feed_subtitle = 'blog articles by jasmine';
+    // location of the blog index page (or if unavailable, your main page).
     $blog_url = 'https://jasm1nii.xyz/blog/articles';
+    // permalink to the XML feed on your site.
     $feed_url = 'https://jasm1nii.xyz/blog/articles/articles.xml';
     $author_name = 'jasmine';
     $author_email = 'contact@jasm1nii.xyz';
@@ -20,23 +23,32 @@
     $feed_icon = 'https://jasm1nii.xyz/assets/media/itchio-textless-white.svg';
     $feed_logo = 'https://jasm1nii.xyz/assets/media/main/07042023-me_compressed.webp';
 
-    // PATH TO FETCH PAGES FROM ///////////////////////////////////////////////////////////
+    // PATH TO FETCH PAGES FROM //
     // __DIR__ is the directory where *this script* is located.
     // in my case, i first need to go up two directories to get to the site root.
     $site_root = dirname(__DIR__, 2);
     // once i'm there, i specify the parent directory where i keep all of my blog pages.
+    // because the values of $blog_root and $blog_entries will be used for generating entry links, forward slashes are a *must*.
     $blog_root = $site_root.'/blog/articles';
-    // then i specify a pattern that matches the path of each individual page.
-    // my setup is /YYYY/MM/DD/entry.html
+    // then, specify a pattern that matches the path of each individual page.
+    // for example, this will match /YYYY/MM/DD/entry.html
     $blog_entries = $blog_root.'/*/*/*/*.html';
 
-    // ------------------------------------------------------------------------------------
+    // ENTRY METADATA //
+    // depending on your site setup, this might not be the same as $blog_url.
+    // the generator will appended $blog_root to the URL specified below.
+    $blog_directory_url = 'https://jasm1nii.xyz/blog/articles';
+
+    // NAME OF FEED FILE
+    $file = 'articles.xml';
+
+    // --------------------------------------------
 
     // create beginning of feed template.
-    // reference for required elements: https://validator.w3.org/feed/docs/atom.html
     ob_start();
     date_default_timezone_set($timezone);
 
+    // reference for required elements: https://validator.w3.org/feed/docs/atom.html
     echo    '<?xml version="1.0" encoding="utf-8"?>'
             .'<feed xmlns="http://www.w3.org/2005/Atom">'
             // optionally specify feed generator for debugging purposes.
@@ -96,21 +108,23 @@
         $title = $x->query("//*[@class='" . $title_class . "']");
         if ($title->length > 0) {
             echo    '<title>'. $title[0]->nodeValue . '</title>';
-        } elseif (!empty($title))   {
-            $title = $article_dom->getElementsByTagName('h2');
+        } elseif ($title->length == 0)   {
+            $title = $article_dom->getElementsByTagName('title');
             echo    '<title>'.$title[0]->nodeValue.'</title>';
         } else {
             echo    $feed_title;
         }
 
         // id
-        echo    '<id>https://jasm1nii.xyz/blog/articles/' . ltrim($article, $blog_root) . '</id>';
+        echo    '<id>' . $blog_directory_url . '/' . ltrim($article, $blog_root) . '</id>';
 
         // alternate link
-        echo    '<link rel="alternate" type="text/html" href="https://jasm1nii.xyz/blog/articles/' . ltrim($article, $blog_root) . '"/>';
+        echo    '<link rel="alternate" type="text/html" href="' . $blog_directory_url . '/' . ltrim($article, $blog_root) . '"/>';
 
-        $updated = $article_dom->getElementsByTagName('time');
-        if (!empty($updated)) {
+        // date updated
+        $updated_class = 'dt-updated';
+        $updated = $x->query("//*[@class='" . $updated_class . "']");
+        if ($updated->length > 0) {
             $timestamp = $updated[0]->getAttribute('datetime');
             if (strlen($timestamp) == 10) {
                 echo    '<updated>' . $timestamp . 'T00:00:00' . date('P'). '</updated>';
@@ -118,9 +132,43 @@
             elseif (strlen($timestamp) == 25 || strlen($timestamp) == 20) {
                 echo    '<updated>' . $timestamp .'</updated>';
             }
-        } else {
-            $article_created = filectime($article);
+        }
+        if ($updated->length == 0) {
+            $updated = $article_dom->getElementsByTagName('time');
+            $timestamp = $updated[0]->getAttribute('datetime');
+            if (strlen($timestamp) == 10) {
+                echo    '<updated>' . $timestamp . 'T00:00:00' . date('P'). '</updated>';
+            } elseif (strlen($timestamp) == 25 || strlen($timestamp) == 20) {
+                echo    '<updated>' . $timestamp .'</updated>';
+            } else {
+            $article_created = filemtime($article);
             echo    '<updated>' . date(DATE_ATOM, $article_created) . '</updated>';
+            }
+        }
+
+        // date published
+        $published_class = 'dt-published';
+        $published = $x->query("//*[@class='" . $published_class . "']");
+        if ($published->length > 0) {
+            $timestamp = $published[0]->getAttribute('datetime');
+            if (strlen($timestamp) == 10) {
+                echo    '<published>' . $timestamp . 'T00:00:00' . date('P'). '</published>';
+            }
+            elseif (strlen($timestamp) == 25 || strlen($timestamp) == 20) {
+                echo    '<published>' . $timestamp .'</published>';
+            }
+        }
+        if ($published->length == 0) {
+            $published = $article_dom->getElementsByTagName('time');
+            $timestamp = $published[0]->getAttribute('datetime');
+            if (strlen($timestamp) == 10) {
+                echo    '<published>' . $timestamp . 'T00:00:00' . date('P'). '</published>';
+            } elseif (strlen($timestamp) == 25 || strlen($timestamp) == 20) {
+                echo    '<published>' . $timestamp .'</published>';
+            } else {
+            $article_created = filectime($article);
+            echo    '<published>' . date(DATE_ATOM, $article_created) . '</published>';
+            }
         }
 
         // summary
@@ -129,6 +177,11 @@
         if ($summary->length > 0) {
             echo    '<summary type="html">';
             echo    $summary->item(0)->nodeValue;
+            echo    '</summary>';
+        } elseif($summary->length == 0) {
+            $summary = get_meta_tags($article)['description'];
+            echo    '<summary type="html">';
+            echo    $summary;
             echo    '</summary>';
         } else {
             echo    '<summary type="html">' . 'A summary of this content is not available.' . '</summary>';
@@ -139,22 +192,24 @@
         $content = $x->query("//*[@class='" . $content_class . "']");
         if ($content->length > 0) {
             // strip line breaks and output a maximum of 500 characters.
-            echo    '<content type="html">' . preg_replace('/\s\s+/', ' ',(substr($content->item(0)->nodeValue,0,500))) . '... (&lt;a href="https://jasm1nii.xyz/blog/articles/' . ltrim($article, $blog_root) . '"&gt;read more&lt;/a&gt;)' . '</content>';
+            echo    '<content type="html">' . preg_replace('/\s\s+/', ' ',(substr($content->item(0)->nodeValue,0,500))) . '... (read more on the original page)' . '</content>';
         } elseif (!empty($content)) {
             $content = $article_dom->getElementsByTagName('article');
-            echo    '<content type="html">' . preg_replace('/\s\s+/', ' ',(substr($content->item(0)->nodeValue,0,500))) . '... (&lt;a href="https://jasm1nii.xyz/blog/articles/' . ltrim($article, $blog_root) . '"&gt;read more&lt;/a&gt;)' . '</content>';
+            echo    '<content type="html">' . preg_replace('/\s\s+/', ' ',(substr($content->item(0)->nodeValue,0,500))) . '... (read more on the original page)' . '</content>';
         } else {
-            echo    '<content type="html">' . 'Content could not be parsed for previewing - view the original article on the website.' . '</content>';
+            echo    '<content type="html">' . 'Content could not be parsed as a preview - view the original article on the website.' . '</content>';
         }
 
         echo    '</entry>';
 
-        // add no more than 10 entries.
-        if(++$i > 9) break;
+        if(++$i > ($max_entries-1)) break;
     }
     echo '</feed>';
 
     $xml_str = ob_get_contents();
     ob_end_clean();
-    file_put_contents($blog_root.'/articles.xml', $xml_str);
+    file_put_contents($blog_root . DIRECTORY_SEPARATOR . $file, $xml_str);
+
+    echo    strtoupper(date("h:i:sa")) . ' - Feed successfully generated in ' . realpath($blog_root) . DIRECTORY_SEPARATOR . $file;
+    echo    '<br/>Validate your feed at https://validator.w3.org/feed/';
 ?>
