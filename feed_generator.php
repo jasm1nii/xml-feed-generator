@@ -40,7 +40,7 @@
     echo    '<?xml version="1.0" encoding="utf-8"?>'
             .'<feed xmlns="http://www.w3.org/2005/Atom">'
             // optionally specify feed generator for debugging purposes.
-            .'<generator uri="https://github.com/jasm1nii/xml-feed-generator" version="1.1">PHP feed generator by jasm1nii.xyz | last modified by the system at ' . strtoupper(date("h:i:sa")) . ' (GMT' . date('P') . ')</generator>'
+            .'<generator uri="https://github.com/jasm1nii/xml-feed-generator" version="1.1">PHP feed generator by jasm1nii.xyz | Last modified by system at ' . strtoupper(date("h:i:sa")) . ' (GMT' . date('P') . ')</generator>'
             .'<title>' . $feed_title . '</title>'
             .'<subtitle>' . $feed_subtitle . '</subtitle>'
             .'<id>' . $blog_url . '</id>'
@@ -57,19 +57,16 @@
     $first_article_dom = new DOMDocument;
     $first_article_dom->loadHTML($first_article_content);
     $feed_updated = $first_article_dom->getElementsByTagName('time');
-    $f = 0;
-    foreach ($feed_updated as $feed_updated_text) {
-        $feed_datetime = $feed_updated_text->getAttribute('datetime');
-        if (strlen($feed_datetime) == 10) {
-            echo    '<updated>' . $feed_datetime . 'T00:00:00' . date('P') .'</updated>';
-        }
-        elseif (strlen($feed_datetime) == 25 || strlen($feed_datetime) == 20) {
-            echo    '<updated>' . $feed_datetime .'</updated>';
-        }
-        if(++$f > 0) break;
-    }
+    if (!empty($feed_updated)) {
+            $feed_datetime = $feed_updated[0]->getAttribute('datetime');
+            if (strlen($feed_datetime) == 10) {
+                echo    '<updated>' . $feed_datetime . 'T00:00:00' . date('P') .'</updated>';
+            }
+            elseif (strlen($feed_datetime) == 25 || strlen($feed_datetime) == 20) {
+                echo    '<updated>' . $feed_datetime .'</updated>';
+            }
     // if no RFC 3339 timestamp is found, use the file creation date.
-    if (empty($feed_updated)) {
+    } else {
         $first_article_created = filectime($first_article);
         echo    '<updated>' . date(DATE_ATOM, $first_article_created) . '</updated>';
     }
@@ -92,10 +89,18 @@
 
         echo    '<entry>';
 
+        $x = new DOMXPath($article_dom);
+
         // title
-        $title = $article_dom->getElementsByTagName('h2');
-        foreach ($title as $title_text) {
-            echo    '<title>'.$title_text->nodeValue.'</title>';
+        $title_class = 'p-name';
+        $title = $x->query("//*[@class='" . $title_class . "']");
+        if ($title->length > 0) {
+            echo    '<title>'. $title[0]->nodeValue . '</title>';
+        } elseif (!empty($title))   {
+            $title = $article_dom->getElementsByTagName('h2');
+            echo    '<title>'.$title[0]->nodeValue.'</title>';
+        } else {
+            echo    $feed_title;
         }
 
         // id
@@ -105,31 +110,28 @@
         echo    '<link rel="alternate" type="text/html" href="https://jasm1nii.xyz/blog/articles/' . ltrim($article, $blog_root) . '"/>';
 
         $updated = $article_dom->getElementsByTagName('time');
-        $a = 0;
-        foreach ($updated as $updated_text) {
-            $timestamp = $updated_text->getAttribute('datetime');
+        if (!empty($updated)) {
+            $timestamp = $updated[0]->getAttribute('datetime');
             if (strlen($timestamp) == 10) {
                 echo    '<updated>' . $timestamp . 'T00:00:00' . date('P'). '</updated>';
             }
             elseif (strlen($timestamp) == 25 || strlen($timestamp) == 20) {
                 echo    '<updated>' . $timestamp .'</updated>';
             }
-            if(++$a > 0) break;
-        }
-        // if no RFC 3339 timestamp is found, use the file creation date.
-        if (empty($updated)) {
+        } else {
             $article_created = filectime($article);
             echo    '<updated>' . date(DATE_ATOM, $article_created) . '</updated>';
         }
 
         // summary
-        $x = new DOMXPath($article_dom);
         $summary_class = 'p-summary';
         $summary = $x->query("//*[@class='" . $summary_class . "']");
         if ($summary->length > 0) {
             echo    '<summary type="html">';
             echo    $summary->item(0)->nodeValue;
             echo    '</summary>';
+        } else {
+            echo    '<summary type="html">' . 'A summary of this content is not available.' . '</summary>';
         }
 
         // content
@@ -138,13 +140,11 @@
         if ($content->length > 0) {
             // strip line breaks and output a maximum of 500 characters.
             echo    '<content type="html">' . preg_replace('/\s\s+/', ' ',(substr($content->item(0)->nodeValue,0,500))) . '... (&lt;a href="https://jasm1nii.xyz/blog/articles/' . ltrim($article, $blog_root) . '"&gt;read more&lt;/a&gt;)' . '</content>';
+        } elseif (!empty($content)) {
+            $content = $article_dom->getElementsByTagName('article');
+            echo    '<content type="html">' . preg_replace('/\s\s+/', ' ',(substr($content->item(0)->nodeValue,0,500))) . '... (&lt;a href="https://jasm1nii.xyz/blog/articles/' . ltrim($article, $blog_root) . '"&gt;read more&lt;/a&gt;)' . '</content>';
         } else {
-            // fallback for older markup
-            $content_class = 'entry';
-            $content = $x->query("//*[@class='" . $content_class . "']");
-            if ($content->length >= 0) {
-                echo    '<content type="html">' . 'whoops - this page contains markup that can&apos;t be parsed for feed-reader friendliness. read more on the website!' . '</content>';
-            }
+            echo    '<content type="html">' . 'Content could not be parsed for previewing - view the original article on the website.' . '</content>';
         }
 
         echo    '</entry>';
