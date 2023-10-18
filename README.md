@@ -11,7 +11,7 @@ an RSS/atom feed generator for my personal site :cat: tested to work with PHP ve
 | original HTML                 | XML output                      |
 |-------------------------------|---------------------------------|
 | 1. `class="p-name"`           | `<title>`                       |
-| 2. `<title>` in `<head>`      |                                 |
+| 2. the first `<title>` element      |                                 |
 | 3. the XML feed title         |                                 |
 |                               |                                 |
 | 1. `datetime` attribute of `class="dt-updated"` | `<updated>`     |
@@ -37,11 +37,13 @@ an RSS/atom feed generator for my personal site :cat: tested to work with PHP ve
 ## ways to use
 - configure a cron job on your web server to run automatically every now and then.
    - if you manage your site with cPanel, [here's how to do that](https://docs.cpanel.net/cpanel/advanced/cron-jobs/).
- 
-or
 
 - run the script locally on your machine.
    - you can open the file on a local server like [five server](https://marketplace.visualstudio.com/items?itemName=yandeu.five-server) for vscode or [XAMPP](https://www.apachefriends.org/index.html).
+   - or if PHP is installed on your system, simply open the file from the command line:
+   ```bash
+   php /path/to/feed_generator.php
+   ```
 
 ## example output
 feel free to check out [the resulting file](https://jasm1nii.xyz/blog/articles/articles.xml) that i've generated.
