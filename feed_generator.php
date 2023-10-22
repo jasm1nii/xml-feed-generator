@@ -32,15 +32,15 @@
     /* -------------------- */
 
     // PATH TO FETCH PAGES FROM
-    ## __DIR__ is the directory where *this script* is located. in my case, i first need to go up two directories to get to the site root.
-    $site_root = dirname(__DIR__, 2);
+    ## __DIR__ is the directory where *this script* is located.
+    $site_root = dirname(__DIR__, 2).'/public_html';
 
     ## once i'm there, i specify the parent directory where i keep all of my blog pages.
     ## because the values of $blog_root and $blog_entries will be used for generating entry links, forward slashes are a *must*.
     $blog_root = $site_root.'/blog/articles';
 
-    ## then, specify a pattern that matches the path of each individual page. for example, this will match /YYYY/MM/DD/entry.html.
-    $blog_entries = $blog_root.'/*/*/*/*.html';
+    ## then, specify a pattern that matches the path of each individual page. for example, this will match /YYYY/MM/DD/entry (any file extension).
+    $blog_entries = $blog_root.'/*/*/*/[entry]*';
 
     /* -------------------- */
 

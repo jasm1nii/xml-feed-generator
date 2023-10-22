@@ -5,8 +5,9 @@ an RSS/atom feed generator for my personal site :cat: tested to work with PHP ve
 
 ## how it works
 1. match files in a specificied directory.
-2. load the DOM of each file.
-3. for each child of `<entry>` in the XML feed, output a string value from one of the following HTML elements/file properties, in order of priority:
+2. precompile any PHP files, if found.
+3. load the DOM of each file.
+4. for each child of `<entry>` in the XML feed, output a string value from one of the following HTML elements/file properties, in order of priority:
 
 | original HTML                 | XML output                      |
 |-------------------------------|---------------------------------|
@@ -32,7 +33,7 @@ an RSS/atom feed generator for my personal site :cat: tested to work with PHP ve
 
 
 
-4. save all of the above into a new file named **articles.xml** (default name, but can be changed).
+5. save all of the above into a new file named **articles.xml** (default name, but can be changed).
 
 ## ways to use
 - configure a cron job on your web server to run automatically every now and then.
